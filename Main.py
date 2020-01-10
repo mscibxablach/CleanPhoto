@@ -6,6 +6,7 @@ import imutils
 from collections import Counter
 from sklearn.cluster import KMeans
 from enum import Enum
+from matplotlib import pyplot as plt
 
 print(cv2.__version__)
 
@@ -108,14 +109,31 @@ def manual_threshold(image):
     for i in range(rows):
         for j in range(cols):
             pixel_value = image_copied[i, j]
-            if pixel_value <= 95 :
+            if pixel_value <= 95:
                 image_copied[i, j] = 0
 
     return image_copied
 
 
+def get_histogram(image):
+    result = []
+    image_copy = image.copy()
+    rows, cols = image.shape
+
+    for j in range(cols):
+        sum = 0
+        for i in range(rows):
+            sum = sum + image[i, j]
+        result.append(sum)
+
+    plt.plot(result)
+    plt.show()
+
+    return result
+
+
 def main():
-    image_path = '../Plot_Photos/43.jpg'
+    image_path = 'Photos/43.jpg'
     image = read_image(image_path)
     copied_image = image.copy()
     cv2.imshow('original image', copied_image)
@@ -135,10 +153,17 @@ def main():
     _, thresholded_bottom = cv2.threshold(manaul_threshold_bottom, 70, 255, cv2.THRESH_BINARY)
     _, thresholded_top = cv2.threshold(manual_threshold_top, 70, 255, cv2.THRESH_BINARY)
 
+    histogram = get_histogram(thresholded_bottom)
+    max_value_in_histogram = max(histogram)
+
     ## Dilate of manual threshold image
     # kernel = np.ones((3, 3), np.uint8)
     # dilated_bottom = cv2.dilate(manaul_threshold_bottom, kernel, iterations=3)
     # dilated_top = cv2.dilate(manual_threshold_top, kernel, iterations=3)
+
+    # kernel = np.ones((5, 5), np.uint8)
+    # morph_open_bottom = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    # morph_close_bottom = cv2.
 
 
 
