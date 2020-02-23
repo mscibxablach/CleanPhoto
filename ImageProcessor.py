@@ -21,6 +21,13 @@ class ImageProcessor:
             mask = cv2.rectangle(mask, (x2, y2), (0, 0), (255, 255, 255), cv2.FILLED)
             return cv2.bitwise_and(morphed_image, morphed_image, mask=mask)
 
+    def split_image(self, image):
+        copied_image = image.copy()
+        bottom = self.cut_image_on_ox_axis(copied_image, MaskPosition.BOTTOM)
+        top = self.cut_image_on_ox_axis(copied_image, MaskPosition.TOP)
+
+        return bottom, top
+
     def cut_image_on_ox_axis(self, image, maskPosition):
         copied_image = image.copy()
         morphed_image = ImageOperations.morph_open_erode_close_image(copied_image)

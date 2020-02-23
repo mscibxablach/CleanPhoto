@@ -1,13 +1,35 @@
 import cv2
 import numpy as np
+from random import randrange
 from matplotlib import pyplot as plt
 
 from ImageOperations import ImageOperations
 
 
 class PlotBoundDetector:
+
+    def __init__(self, image_processor):
+        self.image_processor = image_processor
+
     def get_plot_bound(self, image):
         image = image.copy()
+
+        image = self.image_processor.delete_text(image)
+        bottom, top = self.image_processor.split_image(image)
+
+        bottom = self.__prepare_image(bottom)
+        top = self.__prepare_image(top)
+
+        # cv2.imshow('' + str(randrange(10)), dilated)
+
+        bottom_chunks = self.__get_chunks(bottom)
+        top_chunks = self.__get_chunks(top)
+
+        return np.concatenate((top_chunks, bottom_chunks), axis=0)
+
+    def __prepare_image(self, image):
+        image = image.copy()
+        image = self.image_processor.remove_ox(image)
         gray = ImageOperations.convert_to_gray(image)
 
         manual_thresholded = ImageOperations.color_threshold(gray)
@@ -17,10 +39,13 @@ class PlotBoundDetector:
         kernel = np.ones((3, 3), np.uint8)
         dilated = cv2.dilate(thresholded, kernel, iterations=1)
 
-        histogram = self.get_histogram(dilated, '')
+        return dilated
+
+    def __get_chunks(self, image):
+        histogram = self.get_histogram(image, '')
 
         continous_chunks = self.get_continous_chunks(histogram)
-        continous_chunks = self.filter_chunks(continous_chunks)
+        # continous_chunks = self.filter_chunks(continous_chunks)
         continous_chunks = self.merge_nearest(continous_chunks, 15)
         self.draw_chunks(continous_chunks, image)
 
@@ -47,13 +72,11 @@ class PlotBoundDetector:
         min_value = min(array)
         i = 0
         while i < len(array) - 1:
-            print('row', i)
             value = array[i]
             if value > min_value:
                 chunk = [i]
                 counter = i + 1
                 for j in range(counter, len(array)):
-                    print(j)
                     value = array[j]
                     if value > min_value:
                         chunk.append(j)
@@ -81,32 +104,29 @@ class PlotBoundDetector:
         return round(sum_len / chunks_count)
 
     def merge_nearest(self, chunks, distance):
-        result = []
-        chunk_count = len(chunks)
-        merged = False
+        something_merged = False
+
         counter = 0
-        inner_counter = 0
-        while counter < (chunk_count - 1):
-            start = chunks[counter][0]
-            end = chunks[counter][-1]
-            inner_counter = counter + 1
-            while inner_counter < chunk_count:
-                if self.can_merge(chunks[counter], chunks[inner_counter], distance):
-                    end = chunks[inner_counter][-1]
-                    inner_counter += 1
-                    merged = True
-                else:
-                    break
-            result.append(list(range(start, end + 1)))
+        while counter < len(chunks):
+            has_next_chunk = counter + 1 < len(chunks)
+
+            if not has_next_chunk:
+                counter += 1
+                continue
+
+            current_chunk = chunks[counter]
+            next_chunk = chunks[counter + 1]
+
+            if self.can_merge(current_chunk, next_chunk, distance):
+                chunks[counter] = list(range(current_chunk[0], next_chunk[-1] + 1))
+                del chunks[counter + 1]
+                something_merged = True
             counter += 1
 
-        if counter == 1 and not merged:
-            result.append(chunks[-1])
+        if something_merged:
+            return self.merge_nearest(chunks, distance)
 
-        if counter == 0:
-            return chunks
-
-        return result
+        return chunks
 
     @staticmethod
     def can_merge(first_chunk, second_chunk, k):
