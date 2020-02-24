@@ -28,16 +28,19 @@ def get_all_images(path):
 
 
 def main_v3():
-    image_path = 'Photos/12.jpg'
+    image_path = 'Photos/0.jpg'
 
     image_processor = ImageProcessor()
     plot_bound_detector = PlotBoundDetector(image_processor)
 
     image = ImageOperations.read_image(image_path)
 
-    result = plot_bound_detector.get_plot_bound(image)
-    cv2.imwrite('test.jpg', result)
+    top_chunks, bottom_chunks = plot_bound_detector.get_plot_bound(image)
+    PlotBoundDetector.draw_chunks(top_chunks, image, MaskPosition.TOP)
+    PlotBoundDetector.draw_chunks(bottom_chunks, image, MaskPosition.BOTTOM)
+    cv2.imwrite('test.jpg', image)
     cv2.waitKeyEx()
+
 
 def main_v2():
     results = []
@@ -50,13 +53,15 @@ def main_v2():
         image = ImageOperations.read_image(image_path)
         copied_image = image.copy()
 
-        result = plot_bound_detector.get_plot_bound(image)
+        top_chunks, bottom_chunks = plot_bound_detector.get_plot_bound(image)
+        PlotBoundDetector.draw_chunks(top_chunks, image, MaskPosition.TOP)
+        PlotBoundDetector.draw_chunks(bottom_chunks, image, MaskPosition.BOTTOM)
 
         # ratio = PlotBoundCalculator.calculate_distance_ratio(top_result, bottom_result)
         # results.append((get_filename_from_path(image_path), ratio))
         # print(bottom_result)
 
-        cv2.imwrite(os.path.join(output_path, get_filename_from_path(image_path)), result)
+        cv2.imwrite(os.path.join(output_path, get_filename_from_path(image_path)), image)
     # save_to_file_json(results, "test.json")
 
 

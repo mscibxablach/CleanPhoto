@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from random import randrange
 from matplotlib import pyplot as plt
-
+from MaskPosition import MaskPosition
 from ImageOperations import ImageOperations
 
 
@@ -22,10 +22,54 @@ class PlotBoundDetector:
 
         # cv2.imshow('' + str(randrange(10)), dilated)
 
-        bottom_chunks = self.__get_chunks(bottom)
         top_chunks = self.__get_chunks(top)
+        bottom_chunks = self.__get_chunks(bottom)
 
-        return np.concatenate((top_chunks, bottom_chunks), axis=0)
+        top_chunks, bottom_chunks = self.remove_reflexes(top_chunks, bottom_chunks)
+        top_chunks = self.merge_nearest(top_chunks, 10)
+        bottom_chunks = self.merge_nearest(bottom_chunks, 10)
+        top_chunks = self.filter_chunks(top_chunks)
+        bottom_chunks = self.filter_chunks(bottom_chunks)
+
+        # self.draw_chunks(top_chunks, top)
+        # self.draw_chunks(bottom_chunks, bottom)
+
+        return top_chunks, bottom_chunks
+
+    def remove_reflexes(self, top_chunks, bottom_chunks):
+        for top_chunk in top_chunks:
+            for bottom_chunk in bottom_chunks:
+                if self.is_reflex(top_chunk, bottom_chunk):
+                    bottom_chunks.remove(bottom_chunk)
+
+        for bottom_chunk in bottom_chunks:
+            for top_chunk in top_chunks     :
+                if self.is_reflex(bottom_chunk, top_chunk):
+                    top_chunks.remove(top_chunk)
+
+        return top_chunks, bottom_chunks
+
+        # for i, chunk in enumerate(top_chunks):
+        #     if i < len(bottom_chunks):
+        #         bottom_chunk = bottom_chunks[i]
+        #         if self.is_reflex(chunk, bottom_chunk):
+        #             del bottom_chunks[i]
+        #     else:
+        #         break
+        #
+        # for i, chunk in enumerate(bottom_chunks):
+        #     if i < len(top_chunks):
+        #         top_chunk = top_chunks[i]
+        #         if self.is_reflex(top_chunk, chunk):
+        #             del top_chunks[i]
+        #     else:
+        #         break
+        #
+        # return top_chunks, bottom_chunks
+
+    def is_reflex(self, top_chunk, bottom_chunk):
+        k = 5
+        return top_chunk[0] - k < bottom_chunk[0] and top_chunk[-1] + k > bottom_chunk[-1]
 
     def __prepare_image(self, image):
         image = image.copy()
@@ -45,11 +89,8 @@ class PlotBoundDetector:
         histogram = self.get_histogram(image, '')
 
         continous_chunks = self.get_continous_chunks(histogram)
-        # continous_chunks = self.filter_chunks(continous_chunks)
-        continous_chunks = self.merge_nearest(continous_chunks, 15)
-        self.draw_chunks(continous_chunks, image)
 
-        return image
+        return continous_chunks
 
     def get_histogram(self, image, title):
         result = []
@@ -94,7 +135,7 @@ class PlotBoundDetector:
         return result
 
     def filter_chunks(self, chunks):
-        avg_len = self.get_avrage_length(chunks)
+        avg_len = 6
         result = list(filter(lambda x: len(x) >= avg_len, chunks))
         return result
 
@@ -128,21 +169,28 @@ class PlotBoundDetector:
 
         return chunks
 
-    @staticmethod
-    def can_merge(first_chunk, second_chunk, k):
+    def can_merge(self, first_chunk, second_chunk, k):
         end_first = first_chunk[-1]
         start_second = second_chunk[0]
 
         return (start_second - end_first) <= k
 
-    def draw_chunks(self, chunks, image):
+    @staticmethod
+    def draw_chunks(chunks, image, position):
         width, height = ImageOperations.get_shape(image)
 
         for chunk in chunks:
             color = list(map(lambda x: int(x), list(np.random.choice(range(256), size=3))))
             start_column = chunk[0]
             end_column = chunk[-1]
-            cv2.line(image, (start_column, 0), (start_column, height), color, 1)
-            cv2.line(image, (end_column, 0), (end_column, height), color, 1)
+
+            if position == MaskPosition.TOP:
+                cv2.line(image, (start_column, 0), (start_column, 100), color, 1)
+                cv2.line(image, (end_column, 0), (end_column, 100), color, 1)
+            if position == MaskPosition.BOTTOM:
+                cv2.line(image, (start_column, 100), (start_column, height), color, 1)
+                cv2.line(image, (end_column, 100), (end_column, height), color, 1)
+
+
 
 
