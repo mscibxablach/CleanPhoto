@@ -20,7 +20,8 @@ class PlotBoundDetector:
         bottom = self.__prepare_image(bottom)
         top = self.__prepare_image(top)
 
-        # cv2.imshow('' + str(randrange(10)), dilated)
+        # cv2.imshow('top', top)
+        # cv2.imshow('bottom', bottom)
 
         top_chunks = self.__get_chunks(top)
         bottom_chunks = self.__get_chunks(bottom)
@@ -37,15 +38,26 @@ class PlotBoundDetector:
         return top_chunks, bottom_chunks
 
     def remove_reflexes(self, top_chunks, bottom_chunks):
+        bottom_chunks_to_remove = []
+        top_chunks_to_remove = []
+
         for top_chunk in top_chunks:
             for bottom_chunk in bottom_chunks:
                 if self.is_reflex(top_chunk, bottom_chunk):
-                    bottom_chunks.remove(bottom_chunk)
+                    if bottom_chunk not in bottom_chunks_to_remove:
+                        bottom_chunks_to_remove.append(bottom_chunk)
+
+        for chunks_to_remove in bottom_chunks_to_remove:
+            bottom_chunks.remove(chunks_to_remove)
 
         for bottom_chunk in bottom_chunks:
-            for top_chunk in top_chunks     :
+            for top_chunk in top_chunks:
                 if self.is_reflex(bottom_chunk, top_chunk):
-                    top_chunks.remove(top_chunk)
+                    if top_chunk not in top_chunks_to_remove:
+                        top_chunks_to_remove.append(top_chunk)
+
+        for chunks_to_remove in top_chunks_to_remove:
+            top_chunks.remove(chunks_to_remove)
 
         return top_chunks, bottom_chunks
 
@@ -68,7 +80,7 @@ class PlotBoundDetector:
         # return top_chunks, bottom_chunks
 
     def is_reflex(self, top_chunk, bottom_chunk):
-        k = 5
+        k = 10
         return top_chunk[0] - k < bottom_chunk[0] and top_chunk[-1] + k > bottom_chunk[-1]
 
     def __prepare_image(self, image):
@@ -135,9 +147,15 @@ class PlotBoundDetector:
         return result
 
     def filter_chunks(self, chunks):
-        avg_len = 6
-        result = list(filter(lambda x: len(x) >= avg_len, chunks))
-        return result
+        if len(chunks) > 0:
+            min_length_chunk = min(map(len, chunks))
+            if len(chunks) > 1:
+                result = list(filter(lambda x: len(x) > min_length_chunk, chunks))
+                return result
+            else:
+                return chunks
+        else:
+            return chunks
 
     def get_avrage_length(self, chunks):
         sum_len = sum(len(c) for c in chunks)
