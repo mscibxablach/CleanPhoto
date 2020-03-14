@@ -15,8 +15,11 @@ class PlotBoundDetector:
         image = image.copy()
 
         image = self.image_processor.delete_text(image)
+        cv2.imwrite('result_doc.jpg', image)
         bottom, top = self.image_processor.split_image(image)
 
+        cv2.imwrite('bottom_result.jpg', bottom)
+        cv2.imwrite('top_result.jpg', top)
         bottom = self.__prepare_image(bottom)
         top = self.__prepare_image(top)
 
@@ -61,24 +64,6 @@ class PlotBoundDetector:
 
         return top_chunks, bottom_chunks
 
-        # for i, chunk in enumerate(top_chunks):
-        #     if i < len(bottom_chunks):
-        #         bottom_chunk = bottom_chunks[i]
-        #         if self.is_reflex(chunk, bottom_chunk):
-        #             del bottom_chunks[i]
-        #     else:
-        #         break
-        #
-        # for i, chunk in enumerate(bottom_chunks):
-        #     if i < len(top_chunks):
-        #         top_chunk = top_chunks[i]
-        #         if self.is_reflex(top_chunk, chunk):
-        #             del top_chunks[i]
-        #     else:
-        #         break
-        #
-        # return top_chunks, bottom_chunks
-
     def is_reflex(self, top_chunk, bottom_chunk):
         k = 10
         return top_chunk[0] - k < bottom_chunk[0] and top_chunk[-1] + k > bottom_chunk[-1]
@@ -104,7 +89,7 @@ class PlotBoundDetector:
 
         return continous_chunks
 
-    def get_histogram(self, image, title):
+    def get_histogram(self, image):
         result = []
         rows, cols = ImageOperations.get_shape(image)
 
@@ -113,10 +98,6 @@ class PlotBoundDetector:
             for i in range(rows):
                 sum = sum + image[i, j]
             result.append(sum)
-
-        plt.plot(result)
-        plt.title(title)
-        plt.show()
 
         return result
 
@@ -146,9 +127,8 @@ class PlotBoundDetector:
                 continue
         return result
 
-    def filter_chunks(self, chunks):
+    def filter_chunks(self, chunks, min_length_chunk=6):
         if len(chunks) > 0:
-            min_length_chunk = min(map(len, chunks))
             if len(chunks) > 1:
                 result = list(filter(lambda x: len(x) > min_length_chunk, chunks))
                 return result

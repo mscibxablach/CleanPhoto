@@ -58,7 +58,6 @@ class ImageProcessor:
             y1 = int(y0 + 1000 * (a))
             x2 = int(x0 - 1000 * (-b))
             y2 = int(y0 - 1000 * (a))
-            # cv2.line(morphed_image, (x1, y1), (x2, y2), (0, 0, 255), 10)
 
             return x1, x2, y1, y2
 
@@ -109,11 +108,9 @@ class ImageProcessor:
         image = image.copy()
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        # Every color except white
         lower = np.array([0, 42, 0])
         higher = np.array([179, 255, 255])
 
-        # preparing the mask to overlay
         mask = cv2.inRange(hsv, lower, higher)
 
         image[mask > 0] = (255, 255, 255)

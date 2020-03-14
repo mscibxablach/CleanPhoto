@@ -36,6 +36,11 @@ def main_v3():
     image = ImageOperations.read_image(image_path)
 
     top_chunks, bottom_chunks = plot_bound_detector.get_plot_bound(image)
+    top, bottom, ratio = PlotBoundCalculator.calculate_distance_ratio(top_chunks, bottom_chunks, 30)
+    print(top)
+    print(bottom)
+    print(ratio)
+
     PlotBoundDetector.draw_chunks(top_chunks, image, MaskPosition.TOP)
     PlotBoundDetector.draw_chunks(bottom_chunks, image, MaskPosition.BOTTOM)
     cv2.imwrite('test.jpg', image)
@@ -57,16 +62,15 @@ def main_v2():
         PlotBoundDetector.draw_chunks(top_chunks, image, MaskPosition.TOP)
         PlotBoundDetector.draw_chunks(bottom_chunks, image, MaskPosition.BOTTOM)
 
-        # ratio = PlotBoundCalculator.calculate_distance_ratio(top_result, bottom_result)
-        # results.append((get_filename_from_path(image_path), ratio))
-        # print(bottom_result)
+        result = PlotBoundCalculator.calculate_distance_ratio(top_chunks, bottom_chunks)
+        results.append((get_filename_from_path(image_path), result))
 
         cv2.imwrite(os.path.join(output_path, get_filename_from_path(image_path)), image)
-    # save_to_file_json(results, "test.json")
+    save_to_file_json(results, "old_test.json")
 
 
 def main():
-    main_v2()
+    main_v3()
 
 
 if __name__ == '__main__':
